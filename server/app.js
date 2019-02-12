@@ -47,11 +47,41 @@ app.use(session({
 
 // Express Messages Middleware
 app.use(require('connect-flash')());
-app.use( function (req, res, next) {
+app.use( (req, res, next) => {
 	res.locals.messages = require('express-messages')(req, res);
 	next();
 });
 
+// Express Validator Middleware
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root    = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
+}));
+
+// Passport Config
+require('./config/passport')(passport); 
+
+//Passport Middleware, from Passport documentation, to initialize
+app.use(passport.initialize()); 
+app.use(passport.session()); 
+
+// Creates a route for ALL URLs that enables a global user variable
+app.get('*', (req, res, next) => {
+  res.locals.user = req.user || null;
+  next(); 
+});
 
 // Home Route
 app.get('/', (req, res) => {
